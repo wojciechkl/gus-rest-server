@@ -4,6 +4,12 @@ import com.framework.tools.gus.soap.CompanyInfo;
 import com.framework.tools.gus.soap.GusException;
 import com.framework.tools.gus.soap.GusSoapClient;
 import com.framework.tools.gus.ws.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,8 +35,18 @@ public class GusController {
     @Autowired
     private SoapClientConfig.ConnectionConfig connectionConfig;
 
+    @Operation(summary = "Get company info by NIP. Returns address and PKD list.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Found the company",
+                    content = { @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = CompanyInfo.class)) }),
+            @ApiResponse(responseCode = "429", description = "Too many requests",
+                    content = @Content),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content) })
     @GetMapping(path="/gus", produces="application/json")
-    public ResponseEntity<CompanyInfo> getCompanyInfo(@RequestParam String nip, @RequestParam(required = false) String key) {
+    public ResponseEntity<String> getCompanyInfo(@RequestParam String nip,
+                                                      @RequestParam(required = false) @Parameter(description = "API key for REGON service. For production you need to obtain it from REGON support. For test purposes use 'test' as a key. Production key can also be configured as environment variable GUS_KEY which makes this parameter optional") String key) {
         key = configureClientAndGetKey(key);
         nip = validateAndNormalizeNip(nip);
         GusClientWithRateLimiter.GusFuture<CompanyInfo> future = gusClientWithRateLimiter.createFuture(nip, key);
@@ -44,7 +60,7 @@ public class GusController {
         try {
             // Optional timeout for waiting clients
             CompanyInfo result = future.get(60, TimeUnit.SECONDS);
-            return ResponseEntity.ok(result);
+            return ResponseEntity.ok(result.toJson());
         }
          catch(CompletionException ex) {
             try {

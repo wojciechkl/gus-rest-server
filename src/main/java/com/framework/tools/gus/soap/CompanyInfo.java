@@ -2,9 +2,15 @@ package com.framework.tools.gus.soap;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.framework.tools.gus.rest.GusController;
+import com.google.gson.Gson;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -16,30 +22,45 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
-@ToString
+
 @Data
-@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class CompanyInfo {
+    private static final Logger logger = LoggerFactory.getLogger(CompanyInfo.class);
+
     public String NIP = "";
+    
     public String Nazwa = "";
+    
     public String Regon = "";
+    
     public String KRS = "";
+    
     public String Wojewodztwo = "";
+    
     public String Powiat = "";
+    
     public String Gmina = "";
+    
     public String Miejscowosc = "";
+    
     public String KodPocztowy = "";
+    
     public String Ulica = "";
+    
     public String Posesja = "";
+    
     public String Lokal = "";
+    
     public String Typ = "";
+    
     public String SilosID ="";
-
+    
     public String organRejestrowy = "";
-
+    
     public PKDList listaPKD = new PKDList();
-
+    
     public String ErrorCode;
+    
     public String ErrorMessagePl;
 
     private String getNormalizedRegon(String regonParam){
@@ -93,12 +114,18 @@ public class CompanyInfo {
         return resPkd;
     }
 
-    private String getField(Element root, String field){
-        NodeList list = root.getElementsByTagName(field);
-        if(list.getLength() > 0){
-            return list.item(0).getTextContent();
+    private String getField(Node root, String field){
+        NodeList list = root.getChildNodes();
+        for (int i = 0; i < list.getLength(); i++) {
+            Node n = list.item(i);
+            if (n.getNodeType() == Node.ELEMENT_NODE) {
+                String name = n.getNodeName();
+                if(field.equalsIgnoreCase(name)) {
+                    return n.getTextContent();
+                }
+            }
         }
-        return "";
+        return null;
     }
 
     private String getFieldPrefix(String type) {
@@ -120,7 +147,8 @@ public class CompanyInfo {
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document doc = builder.parse(new InputSource(new java.io.ByteArrayInputStream(repXml.getBytes("utf-8"))));
             Element root = doc.getDocumentElement();
-            this.KRS = getField(root, computeFieldName("numerWrejestrzeEwidencji"));
+            Node dane = root.getElementsByTagName("dane").item(0);
+            this.KRS = getField(dane, computeFieldName("numerWrejestrzeEwidencji"));
             this.Posesja = getField(root, computeFieldName("adSiedzNumerNieruchomosci"));
             this.Lokal = getField(root, computeFieldName("adSiedzNumerLokalu"));
             this.organRejestrowy = getField(root, computeFieldName("organRejestrowy_Nazwa"));
@@ -138,6 +166,11 @@ public class CompanyInfo {
         return !czyOsobaPrawna();
     }
 
+    public String toJson() {
+        Gson gson = new Gson();
+        return gson.toJson(this);
+    }
+
     @ToString
     @Data
     public static class PKD{
@@ -150,7 +183,7 @@ public class CompanyInfo {
     public static class PKDList{
         private List<PKD> list;
         private boolean dzialalnoscWeterynaryjna;
-        @JsonIgnore
+        
         public boolean isLoaded() {
             return list != null;
         }
@@ -206,8 +239,10 @@ public class CompanyInfo {
 
     }
 
-    @JsonIgnore
+    
     public boolean isError(){
         return StringUtils.isNotEmpty(ErrorCode);
     }
+
+
 }
