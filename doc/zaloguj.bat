@@ -1,0 +1,1 @@
+curl -v -L -F "file=@req_zaloguj.txt" https://wyszukiwarkaregontest.stat.gov.pl
