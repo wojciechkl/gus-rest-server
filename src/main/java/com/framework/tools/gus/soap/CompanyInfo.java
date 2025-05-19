@@ -121,7 +121,12 @@ public class CompanyInfo {
             if (n.getNodeType() == Node.ELEMENT_NODE) {
                 String name = n.getNodeName();
                 if(field.equalsIgnoreCase(name)) {
-                    return n.getTextContent();
+                    if(n.getTextContent() != null) {
+                        return n.getTextContent().trim();
+                    }
+                    else{
+                        return "";
+                    }
                 }
             }
         }
@@ -149,9 +154,9 @@ public class CompanyInfo {
             Element root = doc.getDocumentElement();
             Node dane = root.getElementsByTagName("dane").item(0);
             this.KRS = getField(dane, computeFieldName("numerWrejestrzeEwidencji"));
-            this.Posesja = getField(root, computeFieldName("adSiedzNumerNieruchomosci"));
-            this.Lokal = getField(root, computeFieldName("adSiedzNumerLokalu"));
-            this.organRejestrowy = getField(root, computeFieldName("organRejestrowy_Nazwa"));
+            this.Posesja = getField(dane, computeFieldName("adSiedzNumerNieruchomosci"));
+            this.Lokal = getField(dane, computeFieldName("adSiedzNumerLokalu"));
+            this.organRejestrowy = getField(dane, computeFieldName("organRejestrowy_Nazwa"));
         }
         catch(Exception e){
             throw new RuntimeException(e);
